@@ -21,7 +21,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -77,7 +76,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -130,7 +128,6 @@ import roro.stellar.manager.util.UserHandleCompat
 import roro.stellar.manager.util.update.ApkDownloader
 import roro.stellar.manager.util.update.AppUpdate
 import roro.stellar.manager.util.update.DownloadState
-import roro.stellar.manager.util.update.UpdateSource
 import roro.stellar.manager.util.update.UpdateUtils
 import java.util.concurrent.TimeUnit
 
@@ -165,7 +162,6 @@ fun SettingsScreen(
     var showAccessibilityHintDialog by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
-    var currentSource by remember { mutableStateOf<UpdateSource?>(null) }
     var isServiceRunning by remember { mutableStateOf(Stellar.pingBinder()) }
     var bootAdbStartAvailable by remember { mutableStateOf<Boolean?>(null) }
 
@@ -201,7 +197,6 @@ fun SettingsScreen(
                 StellarSettings.setBootMode(StellarSettings.BootMode.NONE)
             }
         }
-        currentSource = UpdateUtils.getPreferredSource()
     }
 
     var tcpipPort by remember {
@@ -260,16 +255,15 @@ fun SettingsScreen(
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var pendingUpdate by remember { mutableStateOf<AppUpdate?>(null) }
     var showUpdateDialog by remember { mutableStateOf(false) }
-    var showSourceDialog by remember { mutableStateOf(false) }
     var isDownloading by remember { mutableStateOf(false) }
     var downloadProgress by remember { mutableIntStateOf(0) }
     var downloadError by remember { mutableStateOf<String?>(null) }
 
-    val performCheckUpdate: (UpdateSource?) -> Unit = { source ->
+    val performCheckUpdate: () -> Unit = {
         isCheckingUpdate = true
         scope.launch {
             try {
-                val update = UpdateUtils.checkUpdate(source)
+                val update = UpdateUtils.checkUpdate()
                 if (update != null && update.versionCode > BuildConfig.VERSION_CODE) {
                     pendingUpdate = update
                     showUpdateDialog = true
@@ -747,9 +741,7 @@ fun SettingsScreen(
 
                         UpdateCard(
                             isCheckingUpdate = isCheckingUpdate,
-                            onCheckUpdate = { performCheckUpdate(null) },
-                            onLongClick = { showSourceDialog = true },
-                            currentSource = currentSource,
+                            onCheckUpdate = performCheckUpdate,
                             modifier = Modifier.weight(1f).fillMaxHeight()
                         )
                     }
@@ -767,9 +759,7 @@ fun SettingsScreen(
                 item {
                     UpdateCard(
                         isCheckingUpdate = isCheckingUpdate,
-                        onCheckUpdate = { performCheckUpdate(null) },
-                        onLongClick = { showSourceDialog = true },
-                        currentSource = currentSource
+                        onCheckUpdate = performCheckUpdate,
                     )
                 }
             }
@@ -928,17 +918,6 @@ fun SettingsScreen(
                         Toast.makeText(context, context.getString(R.string.cannot_open_browser), Toast.LENGTH_SHORT).show()
                     }
                 }
-            }
-        )
-    }
-
-    if (showSourceDialog) {
-        UpdateSourceDialog(
-            onDismiss = { showSourceDialog = false },
-            onSourceSelected = { source ->
-                showSourceDialog = false
-                currentSource = source
-                performCheckUpdate(source)
             }
         )
     }
@@ -1249,8 +1228,6 @@ private fun applyBootMode(
 private fun UpdateCard(
     isCheckingUpdate: Boolean,
     onCheckUpdate: () -> Unit,
-    onLongClick: () -> Unit,
-    currentSource: UpdateSource?,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -1263,11 +1240,6 @@ private fun UpdateCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(AppShape.shapes.cardMedium)
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = onLongClick
-                )
                 .padding(16.dp)
         ) {
             Row(
@@ -1292,53 +1264,12 @@ private fun UpdateCard(
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    FlowRow(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        itemVerticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.check_update),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            if (currentSource != null) {
-                                Text(
-                                    text = currentSource.displayName,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier
-                                        .background(
-                                            color = MaterialTheme.colorScheme.primary,
-                                            shape = AppShape.shapes.tag
-                                        )
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = stringResource(R.string.long_press_switch_source),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(R.string.check_update),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text("GitHub · Kimger/Stellar", style = MaterialTheme.typography.labelSmall)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = stringResource(R.string.current_version, BuildConfig.VERSION_NAME),
@@ -1459,57 +1390,6 @@ private fun NewVersionDialog(
                         shape = AppShape.shapes.buttonMedium
                     ) {
                         Text(stringResource(if (downloadError != null) R.string.go_to_download else R.string.install))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun UpdateSourceDialog(
-    onDismiss: () -> Unit,
-    onSourceSelected: (UpdateSource) -> Unit
-) {
-    BasicAlertDialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = AppShape.shapes.dialog,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp
-        ) {
-            Column(
-                modifier = Modifier.padding(AppSpacing.dialogPadding)
-            ) {
-                Text(
-                    text = stringResource(R.string.select_update_source),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(AppSpacing.sectionSpacing))
-
-                UpdateSource.entries.forEach { source ->
-                    Button(
-                        onClick = { onSourceSelected(source) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        shape = AppShape.shapes.buttonMedium
-                    ) {
-                        Text(source.displayName)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(AppSpacing.dialogPadding))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.cancel))
                     }
                 }
             }
