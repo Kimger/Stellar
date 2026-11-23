@@ -132,6 +132,8 @@ static void start_server(const char *path, const char *main_class, const char *p
             int null_fd = open("/dev/null", O_RDWR);
             if (null_fd != -1) {
                 dup2(null_fd, STDIN_FILENO);
+                dup2(null_fd, STDOUT_FILENO);
+                dup2(null_fd, STDERR_FILENO);
                 if (null_fd > 2) close(null_fd);
             }
 
