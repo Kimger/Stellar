@@ -375,4 +375,11 @@
     <string name="install">Install</string>
     <string name="downloading">Downloading</string>
     <string name="download_failed">Download failed: %s</string>
+    <string name="nearby_devices_allow">Allow nearby devices</string>
+    <string name="nearby_devices_settings">Open app permissions</string>
+    <string name="nearby_devices_granted">Nearby devices: allowed</string>
+    <string name="nearby_devices_hint">Nearby devices access lets Stellar find wireless debugging on this device.</string>
+    <string name="boot_secure_granted">Write secure settings: allowed</string>
+    <string name="boot_secure_missing">Write secure settings: missing</string>
+    <string name="nearby_devices_boot_notice">Allow nearby devices in app permissions, then tap Retry.</string>
 </resources>

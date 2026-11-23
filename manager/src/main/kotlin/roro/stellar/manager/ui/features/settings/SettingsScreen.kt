@@ -3,6 +3,7 @@ package roro.stellar.manager.ui.features.settings
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
+import roro.stellar.manager.ui.components.NearbyDevicesPermission
 import android.content.Intent
 import android.content.pm.PackageManager
 import roro.stellar.manager.compat.BuildUtils.atLeast30
@@ -427,6 +428,18 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
+                        val wirelessBoot = bootMode == StellarSettings.BootMode.TCPIP_PREWARM ||
+                            (bootMode == StellarSettings.BootMode.BROADCAST &&
+                                StellarSettings.getLastLaunchMethod() != StellarSettings.LaunchMethod.ROOT)
+                        if (wirelessBoot && android.os.Build.VERSION.SDK_INT >= 37) {
+                            Text(stringResource(R.string.nearby_devices_hint), style = MaterialTheme.typography.bodySmall)
+                            NearbyDevicesPermission()
+                            val secureGranted = context.checkSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS) ==
+                                PackageManager.PERMISSION_GRANTED
+                            Text(stringResource(if (secureGranted) R.string.boot_secure_granted else R.string.boot_secure_missing),
+                                style = MaterialTheme.typography.bodySmall)
+                        }
 
                         val unavailableMessage = when {
                             (bootMode == StellarSettings.BootMode.BROADCAST ||

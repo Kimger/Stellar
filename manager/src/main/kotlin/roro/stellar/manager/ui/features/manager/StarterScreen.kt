@@ -1,5 +1,7 @@
 package roro.stellar.manager.ui.features.manager
 
+import roro.stellar.manager.ui.components.NearbyDevicesPermission
+import roro.stellar.manager.ui.components.canDiscoverLocalAdb
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.NotificationManager
@@ -307,6 +309,9 @@ private fun StepActionContent(
         Spacer(Modifier.height(12.dp))
 
         when (step.title) {
+            stringResource(R.string.detect_adb_port) -> NearbyDevicesPermission {
+                viewModel.retry()
+            }
             stringResource(R.string.enable_wireless_debugging) -> {
                 if (viewModel.canEnableWirelessDebuggingDirectly()) {
                     Button(
@@ -1199,7 +1204,11 @@ internal class StarterViewModel(
 
             if (atLeast30) {
                 launch(Dispatchers.Main) {
-                    startMdnsDetection(hasValidCustomPort, customPort ?: -1)
+                    if (context.canDiscoverLocalAdb()) {
+                        startMdnsDetection(hasValidCustomPort, customPort ?: -1)
+                    } else {
+                        updateStep(0, StepStatus.RUNNING, context.getString(R.string.nearby_devices_hint), needsUserAction = true)
+                    }
                 }
             } else {
                 launch(Dispatchers.Main) {

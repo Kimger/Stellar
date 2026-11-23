@@ -70,7 +70,31 @@ object BootStartNotifications {
         nm.notify(NOTIFICATION_ID, buildStartingNotification(context, message))
     }
 
+    private const val PERMISSION_NOTICE_ID = 1448
+
+    fun showNearbyPermissionRequired(context: Context) {
+        val settings = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            android.net.Uri.fromParts("package", context.packageName, null))
+        val open = PendingIntent.getActivity(context, 2, settings, PendingIntent.FLAG_IMMUTABLE)
+        val retry = PendingIntent.getBroadcast(context, 0,
+            Intent(context, BootStartActionReceiver::class.java).setAction(BootStartActionReceiver.ACTION_RETRY),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val notice = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stellar)
+            .setContentTitle(context.getString(R.string.boot_start_notification_title))
+            .setContentText(context.getString(R.string.nearby_devices_boot_notice))
+            .setContentIntent(open)
+            .addAction(0, context.getString(R.string.boot_start_retry), retry)
+            .build()
+        context.getSystemService(NotificationManager::class.java).notify(PERMISSION_NOTICE_ID, notice)
+    }
+
+    fun clearPermissionNotice(context: Context) {
+        context.getSystemService(NotificationManager::class.java).cancel(PERMISSION_NOTICE_ID)
+    }
+
     fun dismiss(context: Context) {
+        clearPermissionNotice(context)
         val nm = context.getSystemService(NotificationManager::class.java)
         nm.cancel(NOTIFICATION_ID)
     }

@@ -1,5 +1,6 @@
 package roro.stellar.manager.startup.worker
 
+import roro.stellar.manager.ui.components.canDiscoverLocalAdb
 import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.ContentResolver
@@ -113,11 +114,17 @@ class AdbStartWorker(
                 return Result.success()
             }
 
+            val directPort = EnvironmentUtils.getAdbTcpPort().takeIf { it in 1..65535 }
+            if (directPort == null && !applicationContext.canDiscoverLocalAdb()) {
+                BootStartNotifications.showNearbyPermissionRequired(applicationContext)
+                return Result.failure()
+            }
+            BootStartNotifications.clearPermissionNotice(applicationContext)
             val cr = applicationContext.contentResolver
             Settings.Global.putInt(cr, Settings.Global.ADB_ENABLED, 1)
             Settings.Global.putLong(cr, "adb_allowed_connection_time", 0L)
 
-            val port = EnvironmentUtils.getAdbTcpPort().takeIf { it > 0 } ?: waitForAdbPort(cr)
+            val port = directPort ?: waitForAdbPort(cr)
 
             setForeground(createForegroundInfo(
                 applicationContext.getString(

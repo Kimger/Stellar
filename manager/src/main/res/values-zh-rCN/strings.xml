@@ -374,4 +374,11 @@
     <string name="install">安装</string>
     <string name="downloading">下载中</string>
     <string name="download_failed">下载失败: %s</string>
+    <string name="nearby_devices_allow">允许附近的设备</string>
+    <string name="nearby_devices_settings">打开应用权限</string>
+    <string name="nearby_devices_granted">附近的设备：已允许</string>
+    <string name="nearby_devices_hint">用于自动找到本机的无线调试服务</string>
+    <string name="boot_secure_granted">写入安全设置：已允许</string>
+    <string name="boot_secure_missing">写入安全设置：未授予</string>
+    <string name="nearby_devices_boot_notice">请点此打开应用权限，允许附近的设备后点立即重试。</string>
 </resources>
